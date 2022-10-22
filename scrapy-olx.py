@@ -3,7 +3,9 @@ import json
 import shutil
 import requests
 import unidecode
+import pandas as pd
 from bs4 import BeautifulSoup
+import os
 
 
 def count_pages(url: str) -> int:
@@ -92,6 +94,23 @@ def write_today_ads(ads):
             json.dump(ads, out_file, indent = 4)
 
 
+def compare_ads(ads):
+    '''
+        Show news results
+    '''
+    today_json = './today_ads.json'
+    isExist = os.path.exists(today_json)
+    if not isExist:
+        return None
+
+    yesterday_ads = pd.read_json(today_json)
+    today_ads = pd.DataFrame.from_dict(ads)
+
+    ads_diff = pd.concat([today_ads, yesterday_ads]).drop_duplicates(keep=False)
+    with open('./compared_ads.json', mode='w', encoding='utf-8') as f:
+        json.dump(ads_diff.to_dict(orient = 'records'), f, indent=4)
+
+
 def main():
     url = 'https://rj.olx.com.br/norte-do-estado-do-rio/regiao-dos-lagos/cabo-frio/imoveis/aluguel?'
     page = count_pages(url)
@@ -101,6 +120,7 @@ def main():
     stop_words = ["unamar", "pero", "tamoios", "jacare", "porto do carro", "jardim esperanca", "temporada"]
     filtered_ads = filter_ads(ads, stop_words)
 
+    compare_ads(filtered_ads)
     write_today_ads(filtered_ads)
 
 
