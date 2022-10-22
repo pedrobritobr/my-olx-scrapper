@@ -1,5 +1,6 @@
 import re
 import requests
+import unidecode
 from bs4 import BeautifulSoup
 
 
@@ -46,11 +47,47 @@ def get_all_ads(url: str, last_page: int) -> list:
     return ad_lists
 
 
+def filter_ads(ad_lists: list, not_contain_words: list) -> list:
+    filtered_itens = []
+    for ad_list in ad_lists:
+        for li in ad_list.find_all('li'):
+            try:
+                title = li.find('h2').text
+                title = unidecode.unidecode(title.lower())
+                link = li.find('a')['href']
+
+                price_class = "m7nrfa-0 eJCbzj sc-ifAKCX ANnoQ"
+                value = li.find("span", class_=price_class).text
+                value = re.sub(r'[^\d]', '', value)
+                value = float(value)
+
+                location_class = "sc-1c3ysll-1 cLQXSQ sc-ifAKCX fCbscF"
+                location = li.find("span", class_=location_class)["aria-label"]
+                location = unidecode.unidecode(location.lower())
+                location = location.replace("localizacao: ", "")
+
+                if not any(s for s in not_contain_words if s in title or s in location):
+                    obj = {
+                        "title": title,
+                        "link": link,
+                        "value": value,
+                        "location": location,
+                    }
+                    filtered_itens.append(obj)
+
+            except:
+                continue
+    return filtered_itens
+
+
 def main():
     url = 'https://rj.olx.com.br/norte-do-estado-do-rio/regiao-dos-lagos/cabo-frio/imoveis/aluguel?'
     page = count_pages(url)
 
     ads = get_all_ads(url, page)
+
+    stop_words = ["unamar", "pero", "tamoios", "jacare", "porto do carro", "jardim esperanca", "temporada"]
+    filtered_ads = filter_ads(ads, stop_words)
 
 
 main()
