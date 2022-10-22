@@ -1,4 +1,6 @@
 import re
+import json
+import shutil
 import requests
 import unidecode
 from bs4 import BeautifulSoup
@@ -80,6 +82,16 @@ def filter_ads(ad_lists: list, not_contain_words: list) -> list:
     return filtered_itens
 
 
+def write_today_ads(ads):
+    try:
+        shutil.copyfile("./today_ads.json", "./yesterday_ads.json")
+    except FileNotFoundError:
+        pass
+    finally:
+        with open("today_ads.json", "w") as out_file:
+            json.dump(ads, out_file, indent = 4)
+
+
 def main():
     url = 'https://rj.olx.com.br/norte-do-estado-do-rio/regiao-dos-lagos/cabo-frio/imoveis/aluguel?'
     page = count_pages(url)
@@ -88,6 +100,8 @@ def main():
 
     stop_words = ["unamar", "pero", "tamoios", "jacare", "porto do carro", "jardim esperanca", "temporada"]
     filtered_ads = filter_ads(ads, stop_words)
+
+    write_today_ads(filtered_ads)
 
 
 main()
